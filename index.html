@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>(The Moment Of Truth) Will you be my Valentine?</title>
+
+  <!-- Confetti library -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --bg1: #ffd6e7;
+      --bg2: #ffeef6;
+      --card: #ffffffcc;
+      --yes: #ff3b7a;
+      --yesHover: #ff1f68;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at top, var(--bg2), var(--bg1));
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow: hidden;
+      padding: 16px;
+    }
+
+    #confettiCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .card {
+      width: min(720px, 92vw);
+      padding: 26px 22px;
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      border-radius: 22px;
+      text-align: center;
+      box-shadow: 0 18px 60px rgba(0,0,0,.15);
+      position: relative;
+    }
+
+    .hidden { display: none; }
+
+    .art {
+      width: min(260px, 80vw);
+      margin: 0 auto 10px;
+      display: block;
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,.12));
+    }
+
+    h1 {
+      font-size: clamp(26px, 4vw, 44px);
+      margin: 12px 0 18px;
+    }
+
+    p {
+      margin: 6px 0 10px;
+      line-height: 1.4;
+    }
+
+    .small {
+      font-size: 13px;
+      opacity: .82;
+    }
+
+    .button-row {
+      margin-top: 16px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* add more space between the paragraph and buttons on the first landing step */
+    .story-step[data-step="0"] .button-row {
+      margin-top: 160px; /* increased for much stronger separation */
+    }
+
+    /* slightly larger primary button on landing step */
+    .story-step[data-step="0"] .storyBtn.primary {
+      padding: 16px 28px;
+      font-size: 17px;
+      border-radius: 40px;
+    }
+
+    @media (max-width: 420px) {
+      .story-step[data-step="0"] .button-row {
+        margin-top: 80px; /* mobile-friendly spacing */
+      }
+      .story-step[data-step="0"] .storyBtn.primary {
+        padding: 14px 22px;
+        font-size: 16px;
+      }
+    }
+
+    .storyBtn {
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(0,0,0,.12);
+      background: #e5e7eb;
+      color: #111827;
+      font-size: 15px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .storyBtn.primary {
+      background: var(--yes);
+      color: #fff;
+    }
+    .storyBtn.primary:hover {
+      background: var(--yesHover);
+    }
+
+    /* make the primary button on the missing page more visible */
+    .story-step[data-step="4"] .storyBtn.primary {
+      padding: 16px 28px;
+      font-size: 17px;
+      border-radius: 40px;
+    }
+
+    .story-step {
+      display: none;
+      animation: fade .25s ease;
+    }
+    .story-step.active {
+      display: block;
+    }
+
+    .story-title {
+      font-size: clamp(22px, 3.4vw, 30px);
+      margin-bottom: 10px;
+    }
+
+    .story-single-img {
+      margin: 12px 0 16px;
+    }
+
+    .story-single-img img {
+      width: min(90%, 420px);
+      border-radius: 18px;
+      object-fit: cover;
+      box-shadow: 0 10px 24px rgba(0,0,0,.18);
+      cursor: pointer;
+    }
+
+    .reaction {
+      margin-top: 8px;
+      font-size: 13px;
+      opacity: .8;
+      min-height: 18px;
+    }
+
+    /* memories */
+    .memoryImg {
+      width: min(90%, 430px);
+      border-radius: 18px;
+      object-fit: cover;
+      box-shadow: 0 10px 24px rgba(0,0,0,.18);
+      margin: 14px 0 10px;
+      cursor: pointer;
+    }
+
+    /* story (side-actions) */
+    .story-stage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      width: 100%;
+      margin: 8px 0;
+    }
+
+    .story-main {
+      flex: 1 1 auto;
+      text-align: center;
+    }
+
+    .story-actions {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .story-actions .storyBtn {
+      padding: 14px 18px;
+      min-width: 140px;
+    }
+
+    /* memories */
+    .memory-stage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      width: 100%;
+      margin: 8px 0;
+    }
+
+    .memory-main {
+      flex: 1 1 auto;
+      text-align: center;
+    }
+
+    .memory-actions {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .memory-actions .storyBtn {
+      padding: 14px 18px;
+      min-width: 160px;
+    }
+
+    @media (max-width: 520px) {
+      .memory-stage,
+      .story-stage {
+        flex-direction: column;
+      }
+      .memory-actions,
+      .story-actions {
+        margin-top: 8px;
+      }
+      .memory-actions .storyBtn {
+        min-width: 220px;
+      }
+      .story-actions .storyBtn {
+        min-width: 220px;
+      }
+    }
+
+    .memoryCounter {
+      font-size: 12px;
+      opacity: .7;
+      margin-bottom: 4px;
+    }
+
+    .button-zone {
+      position: relative;
+      width: min(520px, 92%);
+      height: 150px;
+      margin: 0 auto;
+      touch-action: none;
+    }
+
+    button {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 16px 24px;
+      font-size: 18px;
+      font-weight: 800;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(0,0,0,.14);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .12s ease, background .12s ease;
+    }
+
+    #yesBtn {
+      left: 18%;
+      background: var(--yes);
+      color: #fff;
+    }
+    #yesBtn:hover { background: var(--yesHover); }
+
+    #noBtn {
+      left: 62%;
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .hint {
+      margin-top: 10px;
+      font-size: 13px;
+      opacity: .7;
+    }
+
+    .result {
+      display: none;
+      margin-top: 18px;
+      animation: pop .35s ease;
+    }
+
+    .result h2 {
+      font-size: clamp(30px, 4.5vw, 46px);
+      margin: 10px 0;
+    }
+
+    .fireworks {
+      width: min(380px, 90vw);
+      margin: 0 auto;
+      display: block;
+    }
+
+    @keyframes pop {
+      from { transform: scale(.96); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* entrance animations */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: translateY(8px) scale(.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes floatSlow {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+      100% { transform: translateY(0); }
+    }
+
+    /* Use `.enter` on the step to trigger a gentle staggered entrance */
+    .story-step.enter .story-title { animation: slideUp .52s cubic-bezier(.2,.9,.2,1) both; }
+    .story-step.enter .story-single-img img { animation: popIn .56s cubic-bezier(.25,.9,.2,1) .08s both; }
+    .story-step.enter .small { animation: slideUp .46s cubic-bezier(.2,.9,.2,1) .12s both; }
+    .story-step.enter .button-row .storyBtn { animation: slideUp .5s cubic-bezier(.2,.9,.2,1) .22s both; }
+
+    /* memories-specific entrance */
+    .story-step.enter .memoryImg { animation: popIn .56s cubic-bezier(.25,.9,.2,1) .08s both; }
+    .story-step.enter #memoryCounter { animation: slideUp .44s cubic-bezier(.2,.9,.2,1) .04s both; }
+
+    /* valentine page entrance + subtle float on the animal art */
+    #valCard.enter h1 { animation: slideUp .52s cubic-bezier(.2,.9,.2,1) both; }
+    #valCard.enter .art { animation: floatSlow 4s ease-in-out infinite both; }
+    #valCard.enter .button-zone { animation: popIn .5s cubic-bezier(.2,.9,.2,1) .14s both; }
+
+    /* landing step primary pop on enter */
+    .story-step[data-step="0"].enter .storyBtn.primary { transform-origin: center; animation: popIn .6s cubic-bezier(.2,.9,.2,1) .18s both; }
+
+    /* subtle hover lift for interactive elements during/after entrance */
+    .story-step.enter .storyBtn:hover { transform: translateY(-2px); }
+    .story-step.enter .story-single-img img:hover { transform: translateY(-3px) scale(1.01); }
+
+    /* small accessibility: reduce motion respects */
+    @media (prefers-reduced-motion: reduce) {
+      .story-step.enter *,
+      #valCard.enter * { animation: none !important; transition: none !important; }
+      .art { animation: none !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- STORY / INTRO CARD -->
+  <main id="storyCard" class="card">
+    <!-- STEP 0: do you miss me? -->
+    <div class="story-step active" data-step="0">
+      <h1 class="story-title">So… you don’t miss me at all? 🥺</h1>
+      <p class="small">
+        Not even a little, when it’s quiet, when a random song plays, when you pass a place that looks like us?
+      </p>
+      <div class="button-row">
+        <button class="storyBtn primary" data-next-step="1">
+          Okay… maybe I do 😶‍🌫️
+        </button>
+        <button class="storyBtn noStoryBtn">
+          Nope, not even 1%
+        </button>
+      </div>
+      <div class="reaction" id="reaction0"></div>
+    </div>
+
+    <!-- STEP 1: where it all started -->
+    <div class="story-step" data-step="1">
+      <h1 class="story-title">Where it all started, the day you said you love me 💌</h1>
+
+      <div class="story-stage">
+        <div class="story-main">
+          <div class="story-single-img">
+            <!-- 1st pic -->
+            <img src="pics/love-started.jpg" alt="Where it all started" data-next-step="2">
+          </div>
+          <p class="small">
+            This was the day everything changed for me. You said you loved me… and life hasn’t felt the same since.
+          </p>
+        </div>
+
+        <div class="story-actions">
+          <div class="button-row">
+            <button class="storyBtn primary" data-next-step="2">
+              I remember this day 🤍
+            </button>
+            <button class="storyBtn noStoryBtn">
+              Just another random day 🙂
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="reaction" id="reaction1"></div>
+    </div>
+
+    <!-- STEP 2: first kiss -->
+    <div class="story-step" data-step="2">
+      <h1 class="story-title">The day we first kissed 💋</h1>
+
+      <div class="story-stage">
+        <div class="story-main">
+          <div class="story-single-img">
+            <!-- 2nd pic -->
+            <img src="pics/first-kiss.jpg" alt="The day we first kissed" data-next-step="3">
+          </div>
+          <p class="small">
+            The way you hid your face in the mirror and I still found you. Tell me you don’t feel this in your chest.
+          </p>
+        </div>
+
+        <div class="story-actions">
+          <div class="button-row">
+            <button class="storyBtn primary" data-next-step="3">
+              I still feel it, honestly
+            </button>
+            <button class="storyBtn noStoryBtn">
+              I forgot already
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="reaction" id="reaction2"></div>
+    </div>
+
+    <!-- STEP 3: how we spent our beautiful days -->
+    <div class="story-step" data-step="3">
+      <h1 class="story-title">How we spent our beautiful days ✨</h1>
+      <p class="small">
+        Every tap is one of our little lifetimes together.
+      </p>
+
+      <div class="memoryCounter" id="memoryCounter"></div>
+      <div class="memory-stage">
+        <div class="memory-main">
+          <img id="memoryImg" class="memoryImg" src="" alt="Our memory">
+          <p class="small" id="memoryCaption"></p>
+        </div>
+        <div class="memory-actions">
+          <button class="storyBtn primary" id="nextMemoryBtn">
+            Tap to see our next memory
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- STEP 4: missing you (moved to its own card) -->
+  <main id="missingCard" class="card hidden">
+    <div class="story-step" data-step="4">
+      <h1 class="story-title">How Can You Hurt Me?</h1>
+
+      <div class="story-stage">
+        <div class="story-main">
+          <div class="story-single-img">
+            <img src="pics/notebook.jpg" alt="Where are you without me" id="missingImg" tabindex="0" role="button">
+          </div>
+          <p class="small">
+            Where are you when I’m not with you? Where are the promises you wrote in your notebook? Tell me you don’t miss me at all.
+          </p>
+        </div>
+
+        <div class="story-actions">
+          <div class="button-row">
+            <button class="storyBtn primary" id="toValBtn">Tell me you do</button>
+            <button class="storyBtn noStoryBtn">I don’t miss you</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="reaction" id="reaction4"></div>
+    </div>
+  </main>
+
+  <!-- VALENTINE CARD (AFTER ALL THAT) -->
+  <main id="valCard" class="card hidden">
+    <!-- ANIMAL WITH HEART -->
+    <svg class="art" viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="fur" x1="0" x2="1">
+          <stop offset="0" stop-color="#f7c7a1"/>
+          <stop offset="1" stop-color="#f2a97b"/>
+        </linearGradient>
+        <linearGradient id="heart" x1="0" x2="1">
+          <stop offset="0" stop-color="#ff4d7d"/>
+          <stop offset="1" stop-color="#ff1f68"/>
+        </linearGradient>
+      </defs>
+
+      <path d="M250 50 C250 33 270 25 282 38
+               C294 25 314 33 314 50
+               C314 78 282 92 282 106
+               C282 92 250 78 250 50Z"
+            fill="url(#heart)"/>
+
+      <path d="M90 120 C90 70 140 40 190 60
+               C240 40 290 70 290 120
+               C290 180 240 210 190 210
+               C140 210 90 180 90 120Z"
+            fill="url(#fur)"/>
+
+      <path d="M110 92 L95 55 L140 78 Z" fill="#f2a97b"/>
+      <path d="M270 92 L285 55 L240 78 Z" fill="#f2a97b"/>
+
+      <circle cx="160" cy="130" r="8"/>
+      <circle cx="220" cy="130" r="8"/>
+
+      <path d="M190 144 C186 144 182 148 182 152
+               C182 160 190 164 190 170
+               C190 164 198 160 198 152
+               C198 148 194 144 190 144Z"
+            fill="#ff7aa2"/>
+    </svg>
+
+    <p style="font-size: 18px; color: var(--yes); font-weight: 700; margin-bottom: 8px; letter-spacing: 0.5px;">(The Moment Of Truth)</p>
+    <h1>Will you be my Valentine again? 🥺❤️</h1>
+
+    <section class="button-zone" id="zone">
+      <button id="yesBtn">Yes</button>
+      <button id="noBtn">No</button>
+    </section>
+
+    <div class="hint" id="hint">“No” doesn’t really work here, you know 😈</div>
+
+    <section class="result" id="result">
+      <h2>YAY! 🎉</h2>
+      <img
+        class="fireworks"
+        src="https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif"
+        alt="Fireworks"
+      />
+    </section>
+  </main>
+
+  <script>
+  /* ---------- CONFETTI SETUP ---------- */
+  const confettiCanvas = document.getElementById("confettiCanvas");
+
+  function resizeConfettiCanvas() {
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    confettiCanvas.width = Math.floor(window.innerWidth * dpr);
+    confettiCanvas.height = Math.floor(window.innerHeight * dpr);
+    confettiCanvas.style.width = "100vw";
+    confettiCanvas.style.height = "100vh";
+  }
+
+  resizeConfettiCanvas();
+  window.addEventListener("resize", resizeConfettiCanvas);
+  window.addEventListener("orientationchange", () =>
+    setTimeout(resizeConfettiCanvas, 150)
+  );
+
+  const confettiInstance = confetti.create(confettiCanvas, {
+    resize: false,
+    useWorker: true
+  });
+
+  function fullScreenConfetti() {
+    const end = Date.now() + 1600;
+
+    (function frame() {
+      confettiInstance({
+        particleCount: 12,
+        spread: 90,
+        startVelocity: 45,
+        ticks: 180,
+        origin: { x: Math.random(), y: Math.random() * 0.3 }
+      });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    })();
+
+    setTimeout(() => {
+      confettiInstance({
+        particleCount: 300,
+        spread: 140,
+        startVelocity: 60,
+        ticks: 220,
+        origin: { x: 0.5, y: 0.55 }
+      });
+    }, 300);
+  }
+
+  /* ---------- INTRO STORY LOGIC ---------- */
+  const storyCard   = document.getElementById("storyCard");
+  const missingCard = document.getElementById("missingCard");
+  const valCard     = document.getElementById("valCard");
+  const storySteps  = document.querySelectorAll(".story-step");
+
+  function showStep(index) {
+    // swap main cards when going to / leaving the missing page
+    if (index === 4) {
+      storyCard.classList.add("hidden");
+      if (missingCard) missingCard.classList.remove("hidden");
+    } else {
+      if (missingCard) missingCard.classList.add("hidden");
+      storyCard.classList.remove("hidden");
+    }
+
+    // activate the correct step
+    storySteps.forEach((step, i) => {
+      step.classList.toggle("active", i === index);
+    });
+
+    // initialise memories when we reach step 3
+    if (index === 3) {
+      initMemories();
+    }
+
+    // entrance animation for active step
+    const active = storySteps[index];
+    if (active) {
+      active.classList.remove("enter");
+      void active.offsetWidth; // force reflow
+      active.classList.add("enter");
+      setTimeout(() => active.classList.remove("enter"), 900);
+    }
+  }
+
+  function showValentineCard() {
+    // hide BOTH story and missing cards
+    storyCard.classList.add("hidden");
+    if (missingCard) missingCard.classList.add("hidden");
+
+    // show valentine card
+    valCard.classList.remove("hidden");
+
+    // animate valentine card entrance
+    valCard.classList.remove("enter");
+    void valCard.offsetWidth;
+    valCard.classList.add("enter");
+    setTimeout(() => valCard.classList.remove("enter"), 1200);
+  }
+
+  // trigger initial entrance for the first step
+  document.addEventListener("DOMContentLoaded", () => {
+    const initial = document.querySelector(".story-step.active");
+    if (initial) {
+      requestAnimationFrame(() => {
+        initial.classList.add("enter");
+        setTimeout(() => initial.classList.remove("enter"), 900);
+      });
+    }
+  });
+
+  // Next step buttons (the “Yes” buttons and clickable images with data-next-step)
+  document.querySelectorAll("[data-next-step]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const target = btn.getAttribute("data-next-step");
+      const index = parseInt(target, 10);
+      if (!isNaN(index)) {
+        showStep(index);
+      }
+    });
+  });
+
+  // “No” buttons – playful reaction
+  const reactions = [
+    document.getElementById("reaction0"),
+    document.getElementById("reaction1"),
+    document.getElementById("reaction2"),
+    document.getElementById("reaction4")
+  ];
+
+  document.querySelectorAll(".noStoryBtn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const stepEl = e.target.closest(".story-step");
+      const stepIndex = parseInt(stepEl.getAttribute("data-step"), 10);
+      if (!isNaN(stepIndex) && reactions[stepIndex]) {
+        reactions[stepIndex].textContent = "Liar 😏 tap the other button.";
+      }
+    });
+  });
+
+  /* ---------- MEMORIES SLIDESHOW ---------- */
+  const memoryImg      = document.getElementById("memoryImg");
+  const memoryCaption  = document.getElementById("memoryCaption");
+  const memoryCounter  = document.getElementById("memoryCounter");
+  const nextMemoryBtn  = document.getElementById("nextMemoryBtn");
+
+  const memoryImages = [
+    "pics/mem1-book.jpg",
+    "pics/mem2-concert.jpg",
+    "pics/mem3-bracelets.jpg",
+    "pics/mem4-corridor-kiss.jpg",
+    "pics/mem5-eid-restaurant.jpg",
+    "pics/mem6-glasses-selfie.jpg",
+    "pics/mem7-car-surprise.jpg",
+    "pics/mem8-chair-kiss.jpg"
+  ];
+
+  const memoryCaptions = [
+    "You with your little book, looking like the softest person on this planet.",
+    "Us lost in the crowd but only seeing each other.",
+    "Our hands, our bracelets, like we were already promised to each other.",
+    "You standing in front of me and I still couldn’t stop kissing you.",
+    "Eid, food, you glowing more than all the lights around us.",
+    "This selfie where we both look tired and still so in love.",
+    "The car, the balloons, and me trying to make you feel special.",
+    "You on my lap, like home in human form."
+  ];
+
+  let currentMemory  = 0;
+  let memoriesInited = false;
+
+  function renderMemory() {
+    memoryImg.src = memoryImages[currentMemory];
+    memoryCaption.textContent = memoryCaptions[currentMemory];
+    memoryCounter.textContent = `Memory ${currentMemory + 1} of ${memoryImages.length}`;
+  }
+
+  function initMemories() {
+    if (memoriesInited) return;
+    memoriesInited = true;
+    currentMemory = 0;
+    renderMemory();
+    nextMemoryBtn.textContent = "Tap to see our next memory";
+  }
+
+  if (nextMemoryBtn) {
+    nextMemoryBtn.addEventListener("click", () => {
+      if (currentMemory < memoryImages.length - 1) {
+        currentMemory++;
+        renderMemory();
+        if (currentMemory === memoryImages.length - 1) {
+          nextMemoryBtn.textContent = "Okay… now tap here";
+        }
+      } else {
+        // finished all memories, show the missing-you page
+        showStep(4);
+      }
+    });
+  }
+
+  // tap on the memory image also goes to next memory
+  if (memoryImg && nextMemoryBtn) {
+    memoryImg.addEventListener("click", () => nextMemoryBtn.click());
+  }
+
+  /* ---------- ORIGINAL VALENTINE LOGIC ---------- */
+  const zone   = document.getElementById("zone");
+  const yesBtn = document.getElementById("yesBtn");
+  const noBtn  = document.getElementById("noBtn");
+  const result = document.getElementById("result");
+  const hint   = document.getElementById("hint");
+
+  let yesScale = 1;
+  function growYes() {
+    yesScale = Math.min(2.2, yesScale + 0.1);
+    yesBtn.style.transform = `translateY(-50%) scale(${yesScale})`;
+  }
+
+  function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function moveNo(px, py) {
+    const z = zone.getBoundingClientRect();
+    const b = noBtn.getBoundingClientRect();
+
+    let dx = (b.left + b.width / 2) - px;
+    let dy = (b.top + b.height / 2) - py;
+    let mag = Math.hypot(dx, dy) || 1;
+    dx /= mag;
+    dy /= mag;
+
+    let newLeft = (b.left - z.left) + dx * 150;
+    let newTop  = (b.top - z.top) + dy * 150;
+
+    newLeft = clamp(newLeft, 0, z.width - b.width);
+    newTop  = clamp(newTop, 0, z.height - b.height);
+
+    noBtn.style.left = newLeft + "px";
+    noBtn.style.top  = newTop + "px";
+    noBtn.style.transform = "none";
+
+    growYes();
+  }
+
+  if (zone) {
+    zone.addEventListener("pointermove", e => {
+      const b = noBtn.getBoundingClientRect();
+      const d = Math.hypot(
+        (b.left + b.width / 2) - e.clientX,
+        (b.top + b.height / 2) - e.clientY
+      );
+      if (d < 140) moveNo(e.clientX, e.clientY);
+    });
+  }
+
+  if (noBtn) {
+    noBtn.addEventListener("click", e => e.preventDefault());
+  }
+
+  if (yesBtn) {
+    yesBtn.addEventListener("click", () => {
+      zone.style.display  = "none";
+      hint.style.display  = "none";
+      result.style.display = "block";
+      resizeConfettiCanvas();
+      fullScreenConfetti();
+    });
+  }
+
+  // missing-you page → valentine card
+  const toValBtn   = document.getElementById("toValBtn");
+  const missingImg = document.getElementById("missingImg");
+
+  function openValentineFromMissing(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    showValentineCard();
+  }
+
+  if (toValBtn) {
+    toValBtn.addEventListener("click", openValentineFromMissing);
+    toValBtn.addEventListener("touchstart", openValentineFromMissing);
+  }
+
+  if (missingImg) {
+    missingImg.style.cursor = "pointer";
+    missingImg.addEventListener("click", openValentineFromMissing);
+    missingImg.addEventListener("touchstart", openValentineFromMissing);
+    missingImg.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" || ev.key === " ") openValentineFromMissing(ev);
+    });
+  }
+</script>
+</body>
+</html>
